@@ -9,8 +9,8 @@ Personal portfolio site. Backend engineer at Razorpay.
 - HTML / CSS / vanilla JS
 - [three.js](https://threejs.org) + WebGL — animated node-network background, loaded
   from unpkg via an import map
-- Fonts (Newsreader, JetBrains Mono) from Google Fonts
-- Single hand-written HTML file, ~57 KB (no build step, no server)
+- Fonts (Newsreader, JetBrains Mono) self-hosted in `fonts/` as woff2 subsets
+- Single hand-written HTML file, ~62 KB (no build step, no server)
 - Deployed via GitHub Pages
 
 ## Features
@@ -40,9 +40,10 @@ open index.html
 start index.html
 ```
 
-No build step. Everything is in `index.html`; three.js and the web fonts are
-fetched from their CDNs at runtime, so the background scene needs a network
-connection (the page degrades to its CSS gradient background without one).
+No build step. Markup, styles and scripts all live in `index.html`; fonts are
+served from `fonts/`. Only three.js is fetched at runtime (from unpkg), so the
+background scene needs a network connection -- without one the page falls back
+to its CSS gradient background and everything else works normally.
 
 ## Deploy
 
@@ -53,6 +54,9 @@ git add index.html
 git commit -m "update"
 git push
 ```
+
+Lighthouse (median of 4 runs): mobile 81 / desktop 60 performance,
+100 accessibility, 100 best practices, 100 SEO.
 
 Live in ~60 s.
 
