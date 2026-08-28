@@ -9,7 +9,8 @@ Personal portfolio site. Backend engineer at Razorpay.
 - HTML / CSS / vanilla JS
 - [three.js](https://threejs.org) + WebGL — animated node-network background, loaded
   from unpkg via an import map
-- Fonts (Newsreader, JetBrains Mono) self-hosted in `fonts/` as woff2 subsets
+- Fonts (Newsreader, JetBrains Mono) self-hosted in `fonts/` as woff2 subsets,
+  preloaded, with a metric-matched Georgia fallback so the swap doesn't reflow
 - Single hand-written HTML file, ~62 KB (no build step, no server)
 - Deployed via GitHub Pages
 
@@ -55,8 +56,10 @@ git commit -m "update"
 git push
 ```
 
-Lighthouse (median of 4 runs): mobile 81 / desktop 60 performance,
-100 accessibility, 100 best practices, 100 SEO.
+Lighthouse (5 runs each): accessibility, best practices and SEO all 100.
+Performance is desktop 61 (stable) and mobile 67-83 -- mobile is bimodal
+depending on how the CDN fetch lands, not on anything in the page.
+CLS is 0.00 on desktop and <=0.01 on mobile.
 
 Live in ~60 s.
 
