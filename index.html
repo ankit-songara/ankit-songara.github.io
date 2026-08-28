@@ -445,7 +445,14 @@ main { position: relative; z-index: 5; }
   /* italic serif at 52px overhangs its box; give it breathing room */
   padding-right: 0.06em;
 }
-.section-head { width: var(--content-w); margin: 0 auto 40px; }
+/*
+  --content-w is 92vw, but .sec already applies 28px of horizontal padding, so
+  below ~700px this is wider than the box it sits in. `margin: 0 auto` then
+  collapses to 0 against the negative free space and left-aligns the heading
+  while the card grid below stays centred. Cap the width and let the parent
+  flex container do the centring.
+*/
+.section-head { width: var(--content-w); max-width: 100%; margin: 0 0 40px; }
 
 .panel p, .panel li {
   font-size: 17px;
@@ -529,7 +536,9 @@ main { position: relative; z-index: 5; }
 .projects { flex-direction: column; align-items: center; }
 .proj-grid {
   width: var(--content-w);
-  max-width: 1200px;
+  /* 100% keeps the cards inside .sec's padding on phones, where 92vw is wider
+     than the padded content box (see .section-head above) */
+  max-width: min(1200px, 100%);
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 18px;
