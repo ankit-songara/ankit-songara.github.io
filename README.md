@@ -7,8 +7,10 @@ Personal portfolio site. Backend engineer at Razorpay.
 ## Stack
 
 - HTML / CSS / vanilla JS
-- [three.js](https://threejs.org) + WebGL — animated node-network background
-- Single self-contained HTML bundle (no build step, no server)
+- [three.js](https://threejs.org) + WebGL — animated node-network background, loaded
+  from unpkg via an import map
+- Fonts (Newsreader, JetBrains Mono) from Google Fonts
+- Single hand-written HTML file, ~57 KB (no build step, no server)
 - Deployed via GitHub Pages
 
 ## Features
@@ -19,7 +21,12 @@ Personal portfolio site. Backend engineer at Razorpay.
 - Sections: Hero · About · Experience · Projects · Skills · Education · Contact
 - Mobile-responsive
 - OG / Twitter meta tags for link previews
-- Locked 60 fps scroll performance (no `backdrop-filter` blur, rAF-throttled scroll handler, cached `offsetTop` reads)
+- Scroll-reveal animations, gated so the page stays readable without JavaScript
+- Respects `prefers-reduced-motion` (animations off, scene renders one static frame)
+- Adaptive WebGL quality: bloom is skipped on small screens and dropped
+  automatically if frame times slip
+- rAF-throttled scroll handler, cached `offsetTop` reads (recomputed after web
+  fonts swap in), no per-frame layout reads, no `backdrop-filter` blur
 
 ## Local preview
 
@@ -33,7 +40,9 @@ open index.html
 start index.html
 ```
 
-No build step, no dependencies. Page self-unpacks compressed assets via `DecompressionStream`.
+No build step. Everything is in `index.html`; three.js and the web fonts are
+fetched from their CDNs at runtime, so the background scene needs a network
+connection (the page degrades to its CSS gradient background without one).
 
 ## Deploy
 
