@@ -7,11 +7,13 @@ Personal portfolio site. Backend engineer at Razorpay.
 ## Stack
 
 - HTML / CSS / vanilla JS
-- [three.js](https://threejs.org) + WebGL — animated node-network background, loaded
-  from unpkg via an import map
+- [three.js](https://threejs.org) + WebGL — animated node-network background,
+  rendered in a Web Worker via OffscreenCanvas so it never blocks the main thread
+  (vendored in `vendor/`; falls back to the main thread where that's unsupported)
 - Fonts (Newsreader, JetBrains Mono) self-hosted in `fonts/` as woff2 subsets,
   preloaded, with a metric-matched Georgia fallback so the swap doesn't reflow
-- Single hand-written HTML file, ~62 KB (no build step, no server)
+- `index.html` (~49 KB) + `scene.js` + `scene.worker.js` — no build step, no server
+- No third-party requests at runtime; everything is served from this origin
 - Deployed via GitHub Pages
 
 ## Features
@@ -41,10 +43,12 @@ open index.html
 start index.html
 ```
 
-No build step. Markup, styles and scripts all live in `index.html`; fonts are
-served from `fonts/`. Only three.js is fetched at runtime (from unpkg), so the
-background scene needs a network connection -- without one the page falls back
-to its CSS gradient background and everything else works normally.
+No build step and no network dependency -- fonts, three.js and the scene are all
+served from this repo. Markup and styles live in `index.html`; the WebGL scene is
+`scene.js`, hosted either by `scene.worker.js` (preferred) or the main thread.
+
+Note that `file://` won't work for the worker path because of module/worker
+origin rules -- serve the folder over HTTP to test it, e.g. `npx serve`.
 
 ## Deploy
 
@@ -56,10 +60,15 @@ git commit -m "update"
 git push
 ```
 
-Lighthouse (5 runs each): accessibility, best practices and SEO all 100.
-Performance is desktop 61 (stable) and mobile 67-83 -- mobile is bimodal
-depending on how the CDN fetch lands, not on anything in the page.
-CLS is 0.00 on desktop and <=0.01 on mobile.
+Lighthouse, median of 5 runs each:
+
+| | Performance | Accessibility | Best Practices | SEO |
+|---|---|---|---|---|
+| Desktop | 100 | 100 | 100 | 100 |
+| Mobile | 99 | 100 | 100 | 100 |
+
+Total Blocking Time is 0 ms desktop / ~20 ms mobile, and main-thread work is
+~0.4 s desktop / ~1.1 s mobile, because the scene renders off-thread.
 
 Live in ~60 s.
 
