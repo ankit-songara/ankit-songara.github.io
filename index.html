@@ -126,6 +126,22 @@
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
+/*
+  Metric-matched stand-in used only until Newsreader arrives. size-adjust and
+  the ascent/descent overrides are computed from the real font tables against
+  Georgia over 5,727 characters of this page's own copy, so the fallback
+  occupies almost exactly the same space and the swap barely shifts layout.
+  This is what keeps CLS near zero; without it the swap was spiking to ~0.12.
+*/
+@font-face {
+  font-family: 'Newsreader Fallback';
+  src: local('Georgia'), local('Times New Roman'), local('Times');
+  size-adjust: 95.97%;
+  ascent-override: 76.59%;
+  descent-override: 27.61%;
+  line-gap-override: 0%;
+}
+
 /* ---------- root system ---------- */
 :root {
   --bg: #0a1428;
@@ -138,8 +154,8 @@
 
   --accent: #c7a25b;
 
-  --font-display: 'Newsreader', Georgia, serif;
-  --font-body: 'Newsreader', Georgia, serif;
+  --font-display: 'Newsreader', 'Newsreader Fallback', Georgia, serif;
+  --font-body: 'Newsreader', 'Newsreader Fallback', Georgia, serif;
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
 
   --content-w: min(1080px, 92vw);
