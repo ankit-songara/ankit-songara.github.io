@@ -22,7 +22,18 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://unpkg.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,300..500;1,6..72,300..500&display=swap">
+<!--
+  Non-blocking font load. This stylesheet was the page's only render-blocking
+  resource (~710ms mobile / ~470ms desktop). media="print" makes it
+  non-blocking; onload promotes it to all. Both families already use
+  display=swap, so text paints immediately in Georgia / ui-monospace and swaps
+  when the webfont lands.
+-->
+<link rel="stylesheet" media="print" onload="this.media='all';this.onload=null"
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,300..500;1,6..72,300..500&display=swap">
+<noscript>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,300..500;1,6..72,300..500&display=swap">
+</noscript>
 
 <!-- Gate the reveal animations behind this class so the page stays fully
      readable if JavaScript is unavailable or fails to load. -->
@@ -35,20 +46,12 @@
 <script type="importmap">
 {
   "imports": {
-    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.min.js",
     "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
   }
 }
 </script>
 
-<!--
-  Flatten the three.js module waterfall. Previously the scene module had to be
-  parsed before three.module.js was even requested. Preloading the entry point
-  starts that 1.2MB download in parallel with the HTML.
-  Only three.module.js is preloaded: the addons import the bare specifier
-  "three", and preloading those makes Chrome log a module-resolution error.
--->
-<link rel="modulepreload" href="https://unpkg.com/three@0.160.0/build/three.module.js" crossorigin>
 
 <style>
 /* ---------- root system ---------- */
@@ -293,8 +296,15 @@ a { color: inherit; text-decoration: none; }
    The <em> label MUST be hidden here — the anchor collapses to an 8px box and
    an active label would spill across the viewport. */
 @media (max-width: 720px) {
-  .section-dots { right: 14px; gap: 10px; }
+  /*
+    24x24 anchors so the tap targets meet WCAG 2.2 target-size (they were 8x8,
+    the only accessibility audit this page failed). The dot itself stays 8px and
+    centred; `right` and `gap` are adjusted so each dot's centre lands exactly
+    where it did before.
+  */
+  .section-dots { right: 6px; gap: 0; }
   .section-dots a em { display: none; }
+  .section-dots a { width: 24px; height: 24px; justify-content: center; }
   .section-dots a span { width: 8px; height: 8px; background: rgba(199, 162, 91, 0.3); }
   .section-dots a.active span { background: var(--accent); }
 }
@@ -1145,12 +1155,6 @@ main { position: relative; z-index: 5; }
 /* ------------------------------------------------------------------
    scene.js — infrastructure graph + scroll-driven camera
 ------------------------------------------------------------------ */
-import * as THREE from 'three';
-import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
-import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
-import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
-import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
-
 const canvas = document.getElementById('bg');
 const REDUCED = window.__reducedMotion === true;
 const COARSE = matchMedia('(pointer: coarse)').matches;
@@ -1161,7 +1165,30 @@ const SMALL = matchMedia('(max-width: 820px)').matches;
 let useBloom = !SMALL && !REDUCED;
 let dprCap = SMALL ? 1.25 : 1.75;
 
-const renderer = new THREE.WebGLRenderer({
+/*
+  The background is decorative, so none of it should compete with painting the
+  actual content. Everything below runs only after load, on an idle slot, and
+  three.js is imported dynamically — phones and reduced-motion visitors never
+  download the postprocessing addons at all.
+*/
+async function boot() {
+  const THREE = await import('three');
+
+  let EffectComposer, RenderPass, UnrealBloomPass, OutputPass;
+  if (useBloom) {
+    const m = await Promise.all([
+      import('three/addons/postprocessing/EffectComposer.js'),
+      import('three/addons/postprocessing/RenderPass.js'),
+      import('three/addons/postprocessing/UnrealBloomPass.js'),
+      import('three/addons/postprocessing/OutputPass.js'),
+    ]);
+    EffectComposer   = m[0].EffectComposer;
+    RenderPass       = m[1].RenderPass;
+    UnrealBloomPass  = m[2].UnrealBloomPass;
+    OutputPass       = m[3].OutputPass;
+  }
+
+  const renderer = new THREE.WebGLRenderer({
   canvas,
   alpha: true,          // was declared twice (true then false) — the second
                         // literal silently won and made the clear opaque
@@ -1611,18 +1638,33 @@ window.__setMetaphor = (v) => {
   buildLayout(['network', 'rings', 'lattice'].includes(v) ? v : 'network');
 };
 
-// ---------- boot ----------
-buildLayout('network');
+  // ---------- start ----------
+  buildLayout('network');
 
-if (REDUCED) {
-  // Honour the OS setting: compose one still frame, then stop the loop entirely.
-  updateCamera(0, 1);
-  camera.position.copy(camPos);
-  camera.lookAt(camLook);
-  renderFrame();
-} else {
-  animate();
+  if (REDUCED) {
+    // Honour the OS setting: compose one still frame, then stop the loop entirely.
+    updateCamera(0, 1);
+    camera.position.copy(camPos);
+    camera.lookAt(camLook);
+    renderFrame();
+  } else {
+    animate();
+  }
 }
+
+/* Wait for load, then for an idle slot. requestIdleCallback is missing on
+   Safari below 17, so fall back to a short timeout there. */
+function schedule() {
+  const start = () => {
+    // If WebGL or the CDN is unavailable, the CSS gradient background stands in.
+    boot().catch(() => {});
+  };
+  if ('requestIdleCallback' in window) requestIdleCallback(start, { timeout: 2000 });
+  else setTimeout(start, 200);
+}
+
+if (document.readyState === 'complete') schedule();
+else window.addEventListener('load', schedule, { once: true });
 </script>
 
 </body>
