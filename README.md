@@ -64,11 +64,18 @@ Lighthouse, median of 5 runs each:
 
 | | Performance | Accessibility | Best Practices | SEO |
 |---|---|---|---|---|
-| Desktop | 100 | 100 | 100 | 100 |
-| Mobile | 99 | 100 | 100 | 100 |
+| Desktop | 99 | 100 | 100 | 100 |
+| Mobile | 94 | 100 | 100 | 100 |
 
-Total Blocking Time is 0 ms desktop / ~20 ms mobile, and main-thread work is
-~0.4 s desktop / ~1.1 s mobile, because the scene renders off-thread.
+Performance figures are the conservative ones, measured on a machine already at
+~55% CPU load. On an idle machine the same build measures desktop 100 and
+mobile 99; mobile Total Blocking Time is what moves (~20 ms idle, ~230 ms under
+load), so treat mobile as 94-99 depending on conditions.
+
+Stable across both measurement sessions regardless of load: CLS is 0.000 on
+desktop and <=0.004 on mobile, desktop TBT stays under 30 ms, and main-thread
+work is well under a second -- the scene renders off-thread, so the main thread
+is only doing layout and paint.
 
 Live in ~60 s.
 
